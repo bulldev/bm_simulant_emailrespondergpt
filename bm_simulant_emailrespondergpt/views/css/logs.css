@@ -1,0 +1,85 @@
+.log-message {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: normal;
+    text-transform: uppercase;
+}
+
+.badge-info {
+    background-color: #5bc0de;
+    color: #fff;
+}
+
+.badge-warning {
+    background-color: #f0ad4e;
+    color: #fff;
+}
+
+.badge-danger {
+    background-color: #d9534f;
+    color: #fff;
+}
+
+.badge-success {
+    background-color: #5cb85c;
+    color: #fff;
+}
+
+.badge-default {
+    background-color: #777;
+    color: #fff;
+}
+
+.table-logs td {
+    vertical-align: middle !important;
+}
+
+.log-message-full {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    z-index: 1000;
+    max-width: 80%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.log-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.log-actions {
+    white-space: nowrap;
+}
+
+.log-actions .btn {
+    margin-right: 5px;
+}
+
+.log-actions .btn:last-child {
+    margin-right: 0;
+}

@@ -1,0 +1,12 @@
+.statistics-summary .panel {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.statistics-summary .panel-heading {
+    font-weight: bold;
+}
+
+#statistics-date-range {
+    margin-bottom: 20px;
+}

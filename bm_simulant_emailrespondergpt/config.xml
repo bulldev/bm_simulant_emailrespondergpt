@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>bm_simulant_emailrespondergpt</name>
+    <displayName>Simulant AI - Email Responder GPT</displayName>
+    <version>1.0.1</version>
+    <description>Automatically responds to emails using AI</description>
+    <author>Bullmade</author>
+    <tab>administration</tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+    <limited_countries></limited_countries>
+    
+    <ps_versions_compliancy>
+        <min>1.7.0.0</min>
+        <max>8.1.99.99</max>
+    </ps_versions_compliancy>
+    
+    <dependencies>
+        <module>
+            <name>ps_emailssubscription</name>
+            <version_constraint>1.0.0</version_constraint>
+        </module>
+    </dependencies>
+    
+    <hooks>
+        <hook module="bm_simulant_emailrespondergpt" method="hookActionEmailSend" />
+        <hook module="bm_simulant_emailrespondergpt" method="hookDisplayBackOfficeHeader" />
+    </hooks>
+</module>

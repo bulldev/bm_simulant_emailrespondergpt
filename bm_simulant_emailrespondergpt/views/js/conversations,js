@@ -1,0 +1,263 @@
+$(document).ready(function() {
+    // Initialize modals
+    if (!$('#messageModal').length) {
+        $('body').append(`
+            <div id="messageModal" class="message-modal">
+                <div class="modal-header">
+                    <h4 class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+            <div class="modal-overlay"></div>
+        `);
+    }
+
+    // Handle message preview clicks
+    $(document).on('click', '.message-preview', function(e) {
+        e.preventDefault();
+        const fullMessage = $(this).data('full-message');
+        showMessageModal('Message Details', fullMessage);
+    });
+
+    // Handle modal close
+    $(document).on('click', '.modal-overlay, .message-modal .close', function() {
+        hideMessageModal();
+    });
+
+    // Handle ESC key for modal
+    $(document).keyup(function(e) {
+        if (e.key === "Escape") {
+            hideMessageModal();
+        }
+    });
+
+    // Handle retry buttons
+    $('.btn-retry-conversation').on('click', function(e) {
+        e.preventDefault();
+        if (confirm(retryConfirmMessage)) {
+            const url = $(this).attr('href');
+            window.location.href = url;
+        }
+    });
+
+    // Handle bulk actions
+    $('#submitBulk').on('click', function(e) {
+        const action = $('#bulk_action_select_all option:selected').val();
+        if (action === 'delete' && !confirm(deleteConfirmMessage)) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialize tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+
+    // Handle status filter changes
+    $('#status-filter').on('change', function() {
+        const status = $(this).val();
+        filterConversationsByStatus(status);
+    });
+
+    // Handle date range picker if present
+    if ($.fn.daterangepicker) {
+        $('.date-range-picker').daterangepicker({
+            autoUpdateInput: false,
+            locale: {
+                cancelLabel: 'Clear',
+                format: 'YYYY-MM-DD'
+            }
+        });
+
+        $('.date-range-picker').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+            filterConversationsByDate(picker.startDate, picker.endDate);
+        });
+
+        $('.date-range-picker').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+            resetDateFilter();
+        });
+    }
+});
+
+function showMessageModal(title, content) {
+    $('#messageModal .modal-title').text(title);
+    $('#messageModal .modal-body').html(nl2br(content));
+    $('#messageModal, .modal-overlay').fadeIn(200);
+    $('body').addClass('modal-open');
+}
+
+function hideMessageModal() {
+    $('#messageModal, .modal-overlay').fadeOut(200);
+    $('body').removeClass('modal-open');
+}
+
+function nl2br(str) {
+    return str.replace(/(?:\r\n|\r|\n)/g, '<br>');
+}
+
+function filterConversationsByStatus(status) {
+    if (!status) {
+        $('.conversation-row').show();
+        return;
+    }
+
+    $('.conversation-row').each(function() {
+        const rowStatus = $(this).data('status');
+        $(this).toggle(rowStatus === status);
+    });
+}
+
+function filterConversationsByDate(startDate, endDate) {
+    $('.conversation-row').each(function() {
+        const rowDate = moment($(this).data('date'));
+        const isInRange = rowDate.isBetween(startDate, endDate, 'day', '[]');
+        $(this).toggle(isInRange);
+    });
+}
+
+function resetDateFilter() {
+    $('.conversation-row').show();
+}
+
+// Export functionality
+function exportConversations(format = 'csv') {
+    const selectedIds = getSelectedConversationIds();
+    
+    if (selectedIds.length === 0) {
+        showErrorMessage(noSelectionMessage);
+        return;
+    }
+
+    const url = new URL(exportUrl);
+    url.searchParams.append('format', format);
+    url.searchParams.append('ids', selectedIds.join(','));
+    
+    window.location.href = url.toString();
+}
+
+function getSelectedConversationIds() {
+    const ids = [];
+    $('input[name="conversationBox[]"]:checked').each(function() {
+        ids.push($(this).val());
+    });
+    return ids;
+}
+
+// Ajax preview loader
+function loadMessagePreview(id) {
+    $.ajax({
+        url: ajaxUrl,
+        method: 'POST',
+        data: {
+            ajax: 1,
+            action: 'getMessagePreview',
+            id_conversation: id
+        },
+        success: function(response) {
+            if (response.success) {
+                showMessageModal('Message Preview', response.content);
+            } else {
+                showErrorMessage(response.error || 'Error loading preview');
+            }
+        },
+        error: function() {
+            showErrorMessage('Failed to load message preview');
+        }
+    });
+}
+
+// Helper function for error messages
+function showErrorMessage(message) {
+    $.growl.error({
+        message: message,
+        duration: 5000
+    });
+}
+
+// Helper function for success messages
+function showSuccessMessage(message) {
+    $.growl.notice({
+        message: message,
+        duration: 3000
+    });
+}
+
+// Handle conversation statistics
+function loadConversationStats() {
+    $.ajax({
+        url: statsUrl,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                updateStatsDisplay(response.data);
+            }
+        }
+    });
+}
+
+function updateStatsDisplay(data) {
+    // Update statistics counters
+    $('#total-conversations').text(data.total);
+    $('#successful-responses').text(data.successful);
+    $('#average-response-time').text(data.avgResponseTime);
+    
+    // Update charts if they exist
+    if (window.responseTimeChart) {
+        window.responseTimeChart.data = data.responseTimeData;
+        window.responseTimeChart.update();
+    }
+    
+    if (window.languageChart) {
+        window.languageChart.data = data.languageData;
+        window.languageChart.update();
+    }
+}
+
+// Initialize any charts needed
+function initializeCharts() {
+    if ($('#responseTimeChart').length) {
+        window.responseTimeChart = new Chart($('#responseTimeChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Response Time (minutes)',
+                    data: [],
+                    borderColor: '#25b9d7',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    if ($('#languageChart').length) {
+        window.languageChart = new Chart($('#languageChart'), {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        '#25b9d7',
+                        '#72c279',
+                        '#fbbb22',
+                        '#e08f95',
+                        '#35495e'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    }
+}
